@@ -1,0 +1,41 @@
+/*--------------------------------*- C++ -*----------------------------------*\
+| =========                 |                                                 |
+| \\      /  F ield         | OpenFOAM: The Open Source CFD Toolbox           |
+|  \\    /   O peration     | Version:  v2312                                 |
+|   \\  /    A nd           | Web:      www.openfoam.com                      |
+|    \\/     M anipulation  |                                                 |
+\*---------------------------------------------------------------------------*/
+/*
+  Induction progress variable xi (paper Eq. 1)
+  xi = 0 : start of induction (fresh unburned mixture)
+  xi = 1 : end of induction  (triggers heat release via Heaviside)
+  xi > 1 : induction complete (H=0, heat release Eq.2 active)
+  Used in Phase 2 (reacting) only. Inactive in Phase 1.
+*/
+FoamFile
+{
+    version     2.0;
+    format      ascii;
+    class       volScalarField;
+    location    "0";
+    object      xi;
+}
+
+dimensions      [ 0 0 0 0 0 0 0 ];
+
+internalField   uniform 0;
+
+boundaryField
+{
+    inlet
+    {
+        type    fixedValue;
+        value   uniform 0;   // fresh unburned at inlet
+    }
+    outlet      { type zeroGradient; }
+    top         { type zeroGradient; }
+    wedge_wall  { type zeroGradient; }
+    frontAndBack { type empty; }
+}
+
+// ************************************************************************* //

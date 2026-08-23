@@ -1,0 +1,84 @@
+/*--------------------------------*- C++ -*----------------------------------*\
+| =========                 |                                                 |
+| \\      /  F ield         | OpenFOAM: The Open Source CFD Toolbox           |
+|  \\    /   O peration     | Version:  v2312                                 |
+|   \\  /    A nd           | Web:      www.openfoam.com                      |
+|    \\/     M anipulation  |                                                 |
+\*---------------------------------------------------------------------------*/
+/*
+  Numerical schemes for rhoCentralFoam ? Ma=7 hypersonic shock validation
+
+  Paper uses (Section 2):
+    - AUSMPW+ flux splitting
+    - 3rd-order MUSCL spatial reconstruction
+    - 3rd-order Runge-Kutta time integration
+    - Grid: dx = 0.1 lref (reference), dx = 0.05 lref (fine)
+
+  rhoCentralFoam equivalent:
+    - Kurganov-Tadmor central-upwind scheme (comparable to AUSM for shocks)
+    - van Leer limiter: TVD, 2nd-order, appropriate for strong shock capturing
+    - Time: Euler (1st-order explicit) with small CFL=0.3 for accuracy
+    - This combination is well-validated for hypersonic shock interactions
+      (Greenshields et al. Int J Numer Meth Fluids 2010;61:568-597)
+
+  Note: For qualitative validation of oblique shock angles and pressure
+  ratios, this scheme is sufficient. The van Leer limiter prevents
+  oscillations near the shock while maintaining solution monotonicity.
+*/
+FoamFile
+{
+    version     2.0;
+    format      ascii;
+    class       dictionary;
+    location    "system";
+    object      fvSchemes;
+}
+
+fluxScheme          Kurganov;
+ddtSchemes
+{
+    default     Euler;     // 1st-order explicit; standard for rhoCentralFoam
+}
+
+gradSchemes
+{
+    default     Gauss linear;
+}
+
+divSchemes
+{
+    default     none;
+
+    // rhoCentralFoam uses these div schemes for the flux-based transport
+    div(phi,rho)    Gauss vanLeer;
+    div(phi,rhoU)   Gauss vanLeer;
+    div(phi,rhoE)   Gauss vanLeer;
+    div(phi,xi)     Gauss vanLeer;
+    div(phi,eta)    Gauss vanLeer;
+    
+
+    // Viscous stress divergence (near-zero mu, but scheme must be declared)
+    div(((rho*nuEff)*dev2(T(grad(U)))))     Gauss linear;
+    div(tauMC)                              Gauss linear;
+}
+
+laplacianSchemes
+{
+    default     Gauss linear corrected;
+}
+
+interpolationSchemes
+{
+    default             linear;
+    // Reconstruction of primitive variables for Kurganov-Tadmor scheme
+    reconstruct(rho)    vanLeer;
+    reconstruct(U)      vanLeerV;
+    reconstruct(T)      vanLeer;
+}
+
+snGradSchemes
+{
+    default     corrected;
+}
+
+// ************************************************************************* //

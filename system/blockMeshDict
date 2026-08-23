@@ -1,0 +1,188 @@
+/*--------------------------------*- C++ -*----------------------------------*\
+| =========                 |                                                 |
+| \\      /  F ield         | OpenFOAM: The Open Source CFD Toolbox           |
+|  \\    /   O peration     | Version:  v2312                                 |
+|   \\  /    A nd           | Web:      www.openfoam.com                      |
+|    \\/     M anipulation  |                                                 |
+\*---------------------------------------------------------------------------*/
+/*
+  Double-Wedge ODW Validation ? blockMeshDict
+  Paper: Teng et al., CJA 2022, 35(4):176-184
+  -------------------------------------------------------
+  Geometry (paper Section 2, Fig. 1b):
+    theta1 = 15 deg   (first wedge angle)
+    theta2 = 15 deg   (second wedge, baseline Fig. 2)
+    Wedge corner at xc = 40 (non-dim, units = lref = 1 mm physical)
+    Coordinate frame aligned with first wedge surface (paper convention)
+    Inflow Ma0 = 7.0, gamma = 1.2
+
+  Physical mapping (lref = 1 mm = 0.001 m):
+    Domain: 0..160 lref x 0..100 lref =>  0..0.16 m x 0..0.10 m
+    xc = 40 lref = 0.04 m
+    yc = xc * tan(15) = 0.04 * 0.26795 = 0.010718 m
+    At x=0.08 m: y_wall = yc + 0.04*tan(30) = 0.010718+0.023094 = 0.033812 m
+    At x=0.14 m: y_wall = yc + 0.10*tan(30) = 0.010718+0.057735 = 0.068453 m
+
+  Domain height raised to 0.10 m (100 lref) to remove downstream top-wall pinching while preserving wedge geometry.
+
+  Three blocks:
+    Block 0: x=[0,0.04],  lower wall slope tan(15)
+    Block 1: x=[0.04,0.08], lower wall slope tan(30)
+    Block 2: x=[0.08,0.14], lower wall slope tan(30)
+
+  Parallelogram blocks: each block is a sheared quad whose bottom
+  edge follows the wedge surface and top edge is flat at y=0.10 m.
+  Vertices listed as (x_bottom, y_bottom, z) pairs ? the top of each
+  block is just shifted vertically to y_top = 0.10 m.
+
+  Mesh resolution:
+    Paper: dx=0.1 lref (coarse) to dx=0.05 lref (fine).
+    We use dx=0.5 lref (240x160 total cells) for qualitative validation.
+    Resolution is adequate for oblique shock angles, reflected shock
+    position, and pressure ratio comparison.
+*/
+FoamFile
+{
+    version     2.0;
+    format      ascii;
+    class       dictionary;
+    object      blockMeshDict;
+}
+
+scale 0.001;   // lref = 1 mm; all coordinates in mm below
+
+// tan(15 deg) = 0.26795
+// tan(30 deg) = 0.57735
+
+vertices
+(
+    // Block 0: x=[0,40] mm, lower wall: y = x*tan15
+    // Bottom-left
+    ( 0      0        0 )   // 0
+    ( 40     10.718   0 )   // 1  (corner, y=40*tan15)
+    ( 40     100      0 )   // 2  (corner, top)
+    ( 0      100      0 )   // 3  (inlet, top)
+    // z=1 face
+    ( 0      0        1 )   // 4
+    ( 40     10.718   1 )   // 5
+    ( 40     100      1 )   // 6
+    ( 0      100      1 )   // 7
+
+    // Block 1: x=[40,80] mm, lower wall: y = 10.718 + (x-40)*tan30
+    // At x=80: y = 10.718 + 40*0.57735 = 33.812
+    ( 80     33.812   0 )   // 8
+    ( 80     100      0 )   // 9
+    ( 80     33.812   1 )   // 10
+    ( 80     100      1 )   // 11
+
+    // Block 2: x=[80,140] mm, lower wall same slope
+    // At x=140: y = 10.718 + 100*0.57735 = 68.453
+    ( 140    68.453   0 )   // 12
+    ( 140    100      0 )   // 13
+    ( 140    68.453   1 )   // 14
+    ( 140    100      1 )   // 15
+);
+
+blocks
+(
+    // Block 0: upstream region [0..40] x [wall..80]
+    // hex vertex order: (bot-left bot-right top-right top-left) x 2 z-faces
+    hex ( 0 1 2 3   4 5 6 7 )
+    ( 80 120 1 )
+    simpleGrading
+    (
+        1   // x: uniform
+        2   // y: mild wall-normal refinement for slip-wall Euler validation
+        1
+    )
+
+    // Block 1: interaction zone [40..80] x [wall..80]  REFINED
+    hex ( 1 8 9 2   5 10 11 6 )
+    ( 80 120 1 )
+    simpleGrading
+    (
+        1   // x: uniform
+        2   // y: mild wall-normal refinement for slip-wall Euler validation
+        1
+    )
+
+    // Block 2: downstream [80..140] x [wall..80]
+    hex ( 8 12 13 9   10 14 15 11 )
+    ( 120 120 1 )
+    simpleGrading
+    (
+        1   // x: uniform
+        2   // y: mild wall-normal refinement for slip-wall Euler validation
+        1
+    )
+);
+
+edges
+(
+);
+
+boundary
+(
+    inlet
+    {
+        type patch;
+        faces
+        (
+            ( 0 3 7 4 )   // left face of Block 0
+        );
+    }
+
+    outlet
+    {
+        type patch;
+        faces
+        (
+            ( 12 13 15 14 )   // right face of Block 2
+        );
+    }
+
+    top
+    {
+        // Far-field upper boundary ? supersonic, treated as patch
+        type patch;
+        faces
+        (
+            ( 3 2  6  7  )   // top of Block 0
+            ( 2 9  11 6  )   // top of Block 1
+            ( 9 13 15 11 )   // top of Block 2
+        );
+    }
+
+    wedge_wall
+    {
+        // Wedge surface: first wedge (theta1=15) then second (theta1+theta2=30)
+        // Paper: "Slip boundary condition is used on the wedge surface" (Sec. 2)
+        type wall;
+        faces
+        (
+            ( 0 1 5 4  )   // first wedge surface
+            ( 1 8 10 5 )   // second wedge surface
+            ( 8 12 14 10 ) // downstream continuation of second wedge surface
+        );
+    }
+
+    frontAndBack
+    {
+        type empty;
+        faces
+        (
+            ( 0 1 2 3   )   // front z=0, Block 0
+            ( 4 7 6 5   )   // back  z=1, Block 0
+            ( 1 8 9 2   )   // front z=0, Block 1
+            ( 5 6 11 10 )   // back  z=1, Block 1
+            ( 8 12 13 9 )   // front z=0, Block 2
+            ( 10 11 15 14)  // back  z=1, Block 2
+        );
+    }
+);
+
+mergePatchPairs
+(
+);
+
+// ************************************************************************* //

@@ -1,0 +1,84 @@
+/*--------------------------------*- C++ -*----------------------------------*\
+| =========                 |                                                 |
+| \\      /  F ield         | OpenFOAM: The Open Source CFD Toolbox           |
+|  \\    /   O peration     | Version:  v2312                                 |
+|   \\  /    A nd           | Web:      www.openfoam.com                      |
+|    \\/     M anipulation  |                                                 |
+\*---------------------------------------------------------------------------*/
+/*
+  Solver settings for rhoCentralFoam
+
+  rhoCentralFoam is an explicit density-based solver. It advances rho,
+  rhoU, rhoE directly without iterative pressure-velocity coupling.
+  The linear solver settings here are used only for any implicit
+  correction steps (e.g. non-orthogonal corrections).
+*/
+FoamFile
+{
+    version     2.0;
+    format      ascii;
+    class       dictionary;
+    location    "system";
+    object      fvSolution;
+}
+
+solvers
+{
+    // rhoCentralFoam solves continuity, momentum, energy explicitly.
+    // The diagonal solver is appropriate for the explicit update.
+    "(rho|rhoU|rhoE)"
+    {
+        solver      diagonal;
+    }
+
+    "(rho|rhoU|rhoE)Final"
+    {
+        solver      diagonal;
+    }
+    U
+    {
+        solver          smoothSolver;
+        smoother        GaussSeidel;
+        nSweeps         2;
+        tolerance       1e-09;
+        relTol          0.01;
+    }
+
+    h
+    {
+        $U;
+        tolerance       1e-10;
+        relTol          0;
+    }
+    e
+    {
+        $U;
+        tolerance       1e-10;
+        relTol          0;
+    }
+
+    "(xi|eta)"
+    {
+        solver          smoothSolver;
+        smoother        GaussSeidel;
+        nSweeps         2;
+        tolerance       1e-09;
+        relTol          0.01;
+    }
+}
+
+// rhoCentralFoam does not use PIMPLE/SIMPLE iterations.
+// This block is required by OpenFOAM but values are unused.
+PIMPLE
+{
+    nOuterCorrectors        1;
+    nCorrectors             1;
+    nNonOrthogonalCorrectors 0;
+}
+
+// No relaxation for explicit solver
+relaxationFactors
+{
+}
+
+// ************************************************************************* //

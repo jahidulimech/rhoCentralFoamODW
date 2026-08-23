@@ -1,0 +1,111 @@
+/*--------------------------------*- C++ -*----------------------------------*\
+| =========                 |                                                 |
+| \\      /  F ield         | OpenFOAM: The Open Source CFD Toolbox           |
+|  \\    /   O peration     | Version:  2312                                  |
+|   \\  /    A nd           | Website:  www.openfoam.com                      |
+|    \\/     M anipulation  |                                                 |
+\*---------------------------------------------------------------------------*/
+// * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //
+FoamFile
+{
+    version         2;
+    format          ascii;
+    class           dictionary;
+    location        "system";
+    object          controlDict;
+}
+
+application     rhoCentralFoamODW;
+
+startFrom       startTime;
+
+startTime       0.002;
+
+stopAt          endTime;
+
+endTime         0.003;
+
+deltaT          1e-08;
+
+writeControl    adjustableRunTime;
+
+writeInterval   5e-05;
+
+purgeWrite      8;
+
+writeFormat     ascii;
+
+writePrecision  8;
+
+writeCompression off;
+
+timeFormat      general;
+
+timePrecision   6;
+
+runTimeModifiable true;
+
+adjustTimeStep  yes;
+
+maxCo           0.3;
+
+maxDeltaT       1e-07;
+
+functions
+{
+    line_y30
+    {
+        type            sets;
+        libs            ( "libsampling.so" );
+        writeControl    writeTime;
+        interpolationScheme cellPoint;
+        setFormat       raw;
+        sets            ( lineY30 { type uniform ; axis x ; start ( 0 0.03 0.0005 ) ; end ( 0.14 0.03 0.0005 ) ; nPoints 560 ; } );
+        fields          ( p T rho U );
+    }
+    line_wallProximity
+    {
+        type            sets;
+        libs            ( "libsampling.so" );
+        writeControl    writeTime;
+        interpolationScheme cellPoint;
+        setFormat       raw;
+        sets            ( wallLine { type uniform ; axis x ; start ( 0 0.0005 0.0005 ) ; end ( 0.14 0.0005 0.0005 ) ; nPoints 560 ; } );
+        fields          ( p T );
+    }
+    MachNumber
+    {
+        type            MachNo;
+        libs            ( "libfieldFunctionObjects.so" );
+        writeControl    writeTime;
+    }
+    fieldMinMax
+    {
+        type            fieldMinMax;
+        libs            ( "libfieldFunctionObjects.so" );
+        fields          ( p T rho Ma );
+        writeControl    timeStep;
+        writeInterval   200;
+    }
+    wallPressure
+    {
+        type            patchProbes;
+        libs            ( "libsampling.so" );
+        patches         ( wedge_wall );
+        writeControl    writeTime;
+        probeLocations  ( ( 0.005 0.00134 0.0005 ) ( 0.01 0.00268 0.0005 ) ( 0.02 0.00536 0.0005 ) ( 0.03 0.00804 0.0005 ) ( 0.038 0.01019 0.0005 ) ( 0.045 0.01201 0.0005 ) ( 0.06 0.02157 0.0005 ) ( 0.08 0.03381 0.0005 ) ( 0.1 0.04534 0.0005 ) ( 0.12 0.05687 0.0005 ) );
+        fields          ( p T );
+    }
+    solverInfo
+    {
+        type            solverInfo;
+        libs            ( "libutilityFunctionObjects.so" );
+        fields          ( rho rhoU rhoE );
+        writeResidualFields no;
+        writeControl    timeStep;
+        writeInterval   100;
+    }
+}
+
+
+// ************************************************************************* //

@@ -1,0 +1,41 @@
+/*--------------------------------*- C++ -*----------------------------------*\
+| =========                 |                                                 |
+| \\      /  F ield         | OpenFOAM: The Open Source CFD Toolbox           |
+|  \\    /   O peration     | Version:  v2312                                 |
+|   \\  /    A nd           | Web:      www.openfoam.com                      |
+|    \\/     M anipulation  |                                                 |
+\*---------------------------------------------------------------------------*/
+/*
+  Heat release progress variable eta (paper Eq. 2)
+  eta = 0 : no heat released
+  eta = 1 : fully burned (max heat release)
+  Energy source (paper Eq. 4): contribution = -eta * Q added to total energy.
+  Used in Phase 2 (reacting) only. Inactive in Phase 1.
+*/
+FoamFile
+{
+    version     2.0;
+    format      ascii;
+    class       volScalarField;
+    location    "0";
+    object      eta;
+}
+
+dimensions      [ 0 0 0 0 0 0 0 ];
+
+internalField   uniform 0;
+
+boundaryField
+{
+    inlet
+    {
+        type    fixedValue;
+        value   uniform 0;   // unburned at inlet
+    }
+    outlet      { type zeroGradient; }
+    top         { type zeroGradient; }
+    wedge_wall  { type zeroGradient; }
+    frontAndBack { type empty; }
+}
+
+// ************************************************************************* //

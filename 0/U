@@ -1,0 +1,55 @@
+/*--------------------------------*- C++ -*----------------------------------*\
+| =========                 |                                                 |
+| \\      /  F ield         | OpenFOAM: The Open Source CFD Toolbox           |
+|  \\    /   O peration     | Version:  v2312                                 |
+|   \\  /    A nd           | Web:      www.openfoam.com                      |
+|    \\/     M anipulation  |                                                 |
+\*---------------------------------------------------------------------------*/
+/*
+  Velocity field
+  U0 = Ma0 * c0 = 7.0 * sqrt(1.2 * 286.9 * 300) = 7.0 * 321.38 = 2249.65 m/s
+  Direction: +x (coordinate frame aligned with first wedge surface, paper Sec. 2)
+
+  wedge_wall: slip (Euler inviscid – "slip boundary condition on the wedge
+  surface", paper Section 2)
+*/
+FoamFile
+{
+    version     2.0;
+    format      ascii;
+    class       volVectorField;
+    location    "0";
+    object      U;
+}
+
+dimensions      [ 0 1 -1 0 0 0 0 ];   // m/s
+
+internalField   uniform ( 2249.65 0 0 );
+
+boundaryField
+{
+    inlet
+    {
+        type    fixedValue;
+        value   uniform ( 2249.65 0 0 );
+    }
+    outlet
+    {
+        type    zeroGradient;
+    }
+    top
+    {
+        type    zeroGradient;
+    }
+    wedge_wall
+    {
+        // Slip wall – correct BC for Euler (inviscid) equations
+        type    slip;
+    }
+    frontAndBack
+    {
+        type    empty;
+    }
+}
+
+// ************************************************************************* //

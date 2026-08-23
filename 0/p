@@ -1,0 +1,56 @@
+/*--------------------------------*- C++ -*----------------------------------*\
+| =========                 |                                                 |
+| \\      /  F ield         | OpenFOAM: The Open Source CFD Toolbox           |
+|  \\    /   O peration     | Version:  v2312                                 |
+|   \\  /    A nd           | Web:      www.openfoam.com                      |
+|    \\/     M anipulation  |                                                 |
+\*---------------------------------------------------------------------------*/
+/*
+  Pressure field – p0 = 100000 Pa (paper reference, H2-air at 100 kPa, 300 K)
+
+  Boundary conditions for supersonic Ma=7 inflow (rhoCentralFoam):
+    inlet      : fixedValue  – all characteristics enter; fix p = p0
+    outlet     : zeroGradient – supersonic outflow; all chars leave
+    top        : zeroGradient – supersonic far-field
+    wedge_wall : zeroGradient – slip wall (Euler), no normal pressure gradient
+    frontAndBack: empty        – 2D case
+*/
+FoamFile
+{
+    version     2.0;
+    format      ascii;
+    class       volScalarField;
+    location    "0";
+    object      p;
+}
+
+dimensions      [ 1 -1 -2 0 0 0 0 ];   // Pa
+
+internalField   uniform 100000;
+
+boundaryField
+{
+    inlet
+    {
+        type    fixedValue;
+        value   uniform 100000;
+    }
+    outlet
+    {
+        type    zeroGradient;
+    }
+    top
+    {
+        type    zeroGradient;
+    }
+    wedge_wall
+    {
+        type    zeroGradient;
+    }
+    frontAndBack
+    {
+        type    empty;
+    }
+}
+
+// ************************************************************************* //

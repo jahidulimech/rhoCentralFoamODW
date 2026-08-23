@@ -1,0 +1,65 @@
+/*--------------------------------*- C++ -*----------------------------------*\
+| =========                 |                                                 |
+| \\      /  F ield         | OpenFOAM: The Open Source CFD Toolbox           |
+|  \\    /   O peration     | Version:  v2312                                 |
+|   \\  /    A nd           | Web:      www.openfoam.com                      |
+|    \\/     M anipulation  |                                                 |
+\*---------------------------------------------------------------------------*/
+/*
+  Thermophysical properties – non-reacting validation Phase 1
+  Paper parameters (Section 2):
+    gamma = 1.2  =>  Cp/Cv = 1.2
+    R = R_univ / M = 8314.46 / 28.966 = 286.9 J/(kg.K)
+    Cp = gamma*R/(gamma-1) = 1.2*286.9/0.2 = 1721.4 J/(kg.K)
+  Inflow reference state:
+    T0  = 300 K
+    p0  = 100000 Pa
+    rho0 = p0/(R*T0) = 1.1618 kg/m3
+    c0  = sqrt(gamma*R*T0) = 321.38 m/s
+    U0  = Ma0*c0 = 7*321.38 = 2249.65 m/s
+*/
+FoamFile
+{
+    version     2.0;
+    format      ascii;
+    class       dictionary;
+    location    "constant";
+    object      thermophysicalProperties;
+}
+
+thermoType
+{
+    type            hePsiThermo;
+    mixture         pureMixture;
+    transport       const;
+    thermo          hConst;
+    equationOfState perfectGas;
+    specie          specie;
+    energy          sensibleInternalEnergy;
+}
+
+mixture
+{
+    specie
+    {
+        molWeight   28.966;   // g/mol – air equivalent for R=286.9 J/(kg.K)
+    }
+
+    thermodynamics
+    {
+        // Cp set to give gamma = Cp/Cv = 1.2 exactly (paper parameter)
+        // Cv = Cp - R = 1721.4 - 286.9 = 1434.5  =>  gamma = 1721.4/1434.5 = 1.2  OK
+        Cp      1721.4;   // J/(kg.K)
+        Hf      0;        // no heat of formation (non-reacting phase)
+    }
+
+    transport
+    {
+        // Paper uses inviscid Euler equations.
+        // Set mu to near-zero to approximate inviscid flow.
+        mu      1e-10;    // Pa.s  (effectively zero viscosity)
+        Pr      0.72;
+    }
+}
+
+// ************************************************************************* //
