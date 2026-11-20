@@ -1,3 +1,6 @@
+<img width="900" height="650" alt="fine_Ma_8e-05" src="https://github.com/user-attachments/assets/c76df65e-e244-4fc9-a892-968cdd5e53bb" />
+<img width="900" height="650" alt="fine_T_8e-05" src="https://github.com/user-attachments/assets/26392c4b-30b8-4d1e-9df2-d3c12a0ac639" />
+<img width="900" height="650" alt="fine_rho_8e-05" src="https://github.com/user-attachments/assets/100f447f-42cf-4122-9184-c617776aad1c" />
 # rhoCentralFoamODW
 Modified rhoCentralFoam with a simplified two-step Xi chemistry model for double-wedge oblique detonation simulations.
 # rhoCentralFoamODW
